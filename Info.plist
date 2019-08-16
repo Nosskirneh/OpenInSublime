@@ -28,6 +28,8 @@
 	<string>10.7</string>
 	<key>LSUIElement</key>
 	<string>1</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>yo</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>

@@ -7,54 +7,48 @@
 //
 
 #import <Cocoa/Cocoa.h>
-#import "Finder.h"
+#include <objc/message.h>
 
-NSString* getPathToFrontFinderWindow(){
-	
-	FinderApplication* finder = [SBApplication applicationWithBundleIdentifier:@"com.apple.Finder"];
+NSString *getPathToFrontFinderWindow()
+{
+    // Get Finder SBApplication instance
+    id finderApp = ((id (*)(id, SEL, NSString *))objc_msgSend)(objc_getClass("SBApplication"), sel_registerName("applicationWithBundleIdentifier:"), @"com.apple.Finder");
     
-	FinderItem *target = [(NSArray*)[[finder selection]get] firstObject];
-    if (target == nil){
-        target = [[[[finder FinderWindows] firstObject] target] get];
-    }
-	
-	NSURL* url =[NSURL URLWithString:target.URL];
-	NSError* error;
-	NSData* bookmark = [NSURL bookmarkDataWithContentsOfURL:url error:nil];
-    NSURL* fullUrl = [NSURL URLByResolvingBookmarkData:bookmark
-                                        options:NSURLBookmarkResolutionWithoutUI
-                                  relativeToURL:nil
-                            bookmarkDataIsStale:nil
-                                          error:&error];
-    if(fullUrl != nil){
-        url = fullUrl;
-    }
-
-	NSString* path = [[url path] stringByExpandingTildeInPath];
-
+    // Get array of all active Finder windows
+    NSArray *finderWindows = ((id (*)(id, SEL))objc_msgSend)(finderApp, sel_registerName("FinderWindows"));
+    
+    // Get the target Finder window
+    // TODO: handle multi montitor support somehow
+    id desiredFinderWindow = [finderWindows lastObject];
+    id desiredFinderWindowTarget = ((id (*)(id, SEL))objc_msgSend)(desiredFinderWindow, sel_registerName("target"));
+    desiredFinderWindowTarget = ((id (*)(id, SEL))objc_msgSend)(desiredFinderWindowTarget, sel_registerName("get"));
+    
+    // Get the path of the target finder window's working directory
+    NSString *finderCWD = ((id (*)(id, SEL))objc_msgSend)(desiredFinderWindowTarget, sel_registerName("URL"));
+    finderCWD = [[NSURL URLWithString:finderCWD] path];
+    
+    // Handle non-directory being focused
     BOOL isDir = NO;
-    [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
-
-	if(!isDir){
-		path = [path stringByDeletingLastPathComponent];
-	}
-
-	return path;
+    [[NSFileManager defaultManager] fileExistsAtPath:finderCWD isDirectory:&isDir];
+    if (!isDir)
+    {
+        finderCWD = [finderCWD stringByDeletingLastPathComponent];
+    }
+    
+    return finderCWD;
 }
 
 int main(int argc, char *argv[])
 {
-	id pool = [[NSAutoreleasePool alloc] init];
-	
-	NSString* path;
-	@try{
-		path = getPathToFrontFinderWindow();
-	}@catch(id ex){
-		path =[@"~/Desktop" stringByExpandingTildeInPath];
-	}
+    id pool = [[NSAutoreleasePool alloc] init];
     
-    [[NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[@"-n", @"-b" ,@"com.microsoft.VSCode", @"--args", path]] waitUntilExit];
-  	
-	[pool release];
+    NSString *path = getPathToFrontFinderWindow();
+    if (path != nil)
+    {
+        [[NSTask launchedTaskWithLaunchPath:@"/usr/bin/open" arguments:@[@"-n", @"-b" ,@"com.microsoft.VSCode", @"--args", path]] waitUntilExit];
+    }
+    
+    [pool release];
+    
     return 0;
 }
