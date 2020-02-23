@@ -27,7 +27,7 @@ NSString *getPathToFrontFinderWindow() {
 
     // Get the target Finder window
     // TODO: handle multi montitor support somehow
-    SBObject *desiredFinderWindow = [finderWindows lastObject];
+    SBObject *desiredFinderWindow = [finderWindows firstObject];
 
     // Get the path of the target finder window's working directory
     NSString *finderCWD = desiredFinderWindow.target.get.URL;
