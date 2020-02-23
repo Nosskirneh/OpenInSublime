@@ -1,10 +1,6 @@
 //
 //  main.m
-//  Open in Code
-//
-//  Created by Sertac Ozercan on 7/9/2016.
-//  Copyright Sertac Ozercan 2016. All rights reserved.
-//
+//  Open in Sublime
 
 #import <Cocoa/Cocoa.h>
 
